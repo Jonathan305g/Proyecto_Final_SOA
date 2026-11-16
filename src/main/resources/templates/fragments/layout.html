@@ -1,0 +1,87 @@
+<!doctype html>
+<html
+  lang="es"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:fragment="head(titulo)">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title th:text="${titulo} + ' · Bodega UTA'">Bodega UTA</title>
+    <link rel="stylesheet" th:href="@{/vendor/bootstrap.min.css}" />
+    <link rel="stylesheet" th:href="@{/css/app.css}" />
+  </head>
+  <body>
+    <div th:fragment="nav">
+      <a class="visually-hidden-focusable" href="#contenido"
+        >Saltar al contenido</a
+      >
+      <header class="topbar">
+        <div
+          class="container-xl d-flex align-items-center gap-3 flex-wrap py-3"
+        >
+          <a class="brand" th:href="@{/}"
+            ><span class="brand-mark">B</span> Bodega<span class="brand-uta"
+              >UTA</span
+            ></a
+          ><span class="institution ms-auto"
+            >FISEI · Ingeniería en Software</span
+          >
+          <div class="identity">
+            <strong sec:authentication="name">Usuario</strong
+            ><span sec:authorize="hasRole('ADMIN')">Administrador</span
+            ><span sec:authorize="hasRole('BODEGUERO')">Bodeguero</span>
+          </div>
+          <form th:action="@{/logout}" method="post">
+            <button class="btn btn-outline-light btn-sm" type="submit">
+              Cerrar sesión
+            </button>
+          </form>
+        </div>
+      </header>
+      <nav class="mainnav" aria-label="Navegación principal">
+        <div class="container-xl d-flex flex-wrap gap-1 py-2">
+          <a th:href="@{/}">Inicio</a><a th:href="@{/productos}">Productos</a
+          ><a th:href="@{/inventario}">Inventario</a
+          ><a th:href="@{/entradas/nueva}">Registrar entrada</a
+          ><a th:href="@{/entradas}">Historial</a
+          ><th:block sec:authorize="hasRole('ADMIN')"
+            ><a th:href="@{/admin/categorias}">Categorías</a
+            ><a th:href="@{/admin/marcas}">Marcas</a
+            ><a th:href="@{/admin/proveedores}">Proveedores</a
+            ><a th:href="@{/admin/usuarios}">Usuarios</a></th:block
+          >
+        </div>
+      </nav>
+    </div>
+    <div th:fragment="mensajes">
+      <div
+        class="alert alert-success"
+        role="status"
+        th:if="${exito}"
+        th:text="${exito}"
+      ></div>
+      <div
+        class="alert alert-danger"
+        role="alert"
+        th:if="${error}"
+        th:text="${error}"
+      ></div>
+    </div>
+    <div
+      th:fragment="errores"
+      th:if="${#fields.hasAnyErrors()}"
+      class="alert alert-danger"
+      role="alert"
+    >
+      <strong>Revise la información:</strong>
+      <ul class="mb-0">
+        <li th:each="e : ${#fields.allErrors()}" th:text="${e}"></li>
+      </ul>
+    </div>
+    <footer th:fragment="footer" class="container-xl footer">
+      <span>Universidad Técnica de Ambato · FISEI</span
+      ><span>Aplicaciones Orientadas a Servicios · Inventario de bodega</span>
+    </footer>
+  </body>
+</html>

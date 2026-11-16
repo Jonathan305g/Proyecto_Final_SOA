@@ -1,0 +1,117 @@
+<!doctype html>
+<html
+  lang="es"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{fragments/layout :: head('Registrar entrada')}"></head>
+  <body>
+    <div th:replace="~{fragments/layout :: nav}"></div>
+    <main class="container-xl py-4 py-lg-5" id="contenido">
+      <div th:replace="~{fragments/layout :: mensajes}"></div>
+
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">BODEGA / RECEPCIÓN</p>
+          <h1>Registrar entrada</h1>
+          <p>
+            Registre los productos recibidos para actualizar sus existencias.
+          </p>
+        </div>
+        <a class="btn btn-outline-secondary" th:href="@{/entradas}"
+          >Ver historial</a
+        >
+      </div>
+      <form
+        class="form-panel"
+        th:action="@{/entradas}"
+        th:object="${form}"
+        method="post"
+      >
+        <div th:replace="~{fragments/layout :: errores}"></div>
+        <div
+          class="alert alert-warning"
+          th:if="${#lists.isEmpty(productos) or #lists.isEmpty(proveedores)}"
+        >
+          Se necesita al menos un producto activo y un proveedor. Solicite al
+          administrador que complete los catálogos.
+        </div>
+        <div class="row g-4">
+          <div class="col-md-8">
+            <label for="productoId" class="form-label">Producto *</label
+            ><select
+              id="productoId"
+              th:field="*{productoId}"
+              class="form-select"
+              required
+            >
+              <option value="">Seleccione un producto activo</option>
+              <option
+                th:each="p : ${productos}"
+                th:value="${p.id}"
+                th:text="${p.codigo + ' · ' + p.nombre + ' (stock: ' + p.stockActual + ')'}"
+              ></option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="cantidad" class="form-label">Cantidad recibida *</label
+            ><input
+              id="cantidad"
+              type="number"
+              th:field="*{cantidad}"
+              min="1"
+              max="2147483647"
+              step="1"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="col-12">
+            <label for="proveedorId" class="form-label">Proveedor *</label
+            ><select
+              id="proveedorId"
+              th:field="*{proveedorId}"
+              class="form-select"
+              required
+            >
+              <option value="">Seleccione un proveedor</option>
+              <option
+                th:each="p : ${proveedores}"
+                th:value="${p.id}"
+                th:text="${p.nombre}"
+              ></option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label for="observacion" class="form-label">Observación</label
+            ><textarea
+              id="observacion"
+              th:field="*{observacion}"
+              class="form-control"
+              rows="3"
+              maxlength="500"
+              placeholder="Detalle opcional de la recepción"
+            ></textarea>
+          </div>
+        </div>
+        <div class="form-note mt-4">
+          <strong>Responsable:</strong> <span sec:authentication="name"></span
+          ><br />La fecha se asigna automáticamente al guardar. Una entrada
+          confirmada conserva su historial y no puede editarse ni eliminarse.
+        </div>
+        <div class="form-actions">
+          <button
+            class="btn btn-primary"
+            type="submit"
+            th:disabled="${#lists.isEmpty(productos) or #lists.isEmpty(proveedores)}"
+          >
+            Confirmar entrada</button
+          ><a class="btn btn-outline-secondary" th:href="@{/inventario}"
+            >Cancelar</a
+          >
+        </div>
+      </form>
+    </main>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+  </body>
+</html>

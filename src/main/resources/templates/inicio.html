@@ -1,0 +1,79 @@
+<!doctype html>
+<html
+  lang="es"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{fragments/layout :: head('Inicio')}"></head>
+  <body>
+    <div th:replace="~{fragments/layout :: nav}"></div>
+    <main class="container-xl py-4 py-lg-5" id="contenido">
+      <div th:replace="~{fragments/layout :: mensajes}"></div>
+
+      <section class="welcome">
+        <div>
+          <p class="eyebrow">SISTEMA DE INVENTARIO</p>
+          <h1>Su bodega, en orden.</h1>
+          <p>
+            Consulte las existencias y registre cada entrada con su responsable.
+          </p>
+          <a class="btn btn-primary mt-2" th:href="@{/entradas/nueva}"
+            >+ Registrar entrada</a
+          >
+        </div>
+        <div class="welcome-label">
+          <span class="status-dot"></span> Gestión de bodega<span
+            class="d-block small mt-2 text-secondary"
+            >Universidad Técnica de Ambato</span
+          >
+        </div>
+      </section>
+      <div class="section-heading mt-5">
+        <h2>Operaciones de bodega</h2>
+        <span>Seleccione una tarea</span>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <a class="action-card" th:href="@{/inventario}"
+            ><span class="card-number">01</span>
+            <h3>Consultar inventario</h3>
+            <p>
+              Revise el stock actual y los niveles mínimos de cada producto.
+            </p>
+            <span class="card-link">Ver existencias →</span></a
+          >
+        </div>
+        <div class="col-md-4">
+          <a class="action-card" th:href="@{/productos}"
+            ><span class="card-number">02</span>
+            <h3>Explorar productos</h3>
+            <p>Encuentre productos por código, nombre o categoría.</p>
+            <span class="card-link">Buscar productos →</span></a
+          >
+        </div>
+        <div class="col-md-4">
+          <a class="action-card" th:href="@{/entradas}"
+            ><span class="card-number">03</span>
+            <h3>Historial de entradas</h3>
+            <p>Consulte cantidades recibidas, proveedores y responsables.</p>
+            <span class="card-link">Consultar historial →</span></a
+          >
+        </div>
+      </div>
+      <section class="admin-strip mt-4" sec:authorize="hasRole('ADMIN')">
+        <div>
+          <h3>Administración</h3>
+          <p class="mb-0 text-secondary">
+            Mantenga actualizados los productos, catálogos y accesos.
+          </p>
+        </div>
+        <a class="btn btn-outline-primary" th:href="@{/admin/productos/nuevo}"
+          >Crear producto</a
+        ><a class="btn btn-outline-primary" th:href="@{/admin/usuarios}"
+          >Gestionar usuarios</a
+        >
+      </section>
+    </main>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+  </body>
+</html>

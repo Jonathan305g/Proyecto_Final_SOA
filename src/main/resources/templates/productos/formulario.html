@@ -1,0 +1,132 @@
+<!doctype html>
+<html
+  lang="es"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{fragments/layout :: head('Producto')}"></head>
+  <body>
+    <div th:replace="~{fragments/layout :: nav}"></div>
+    <main class="container-xl py-4 py-lg-5" id="contenido">
+      <div th:replace="~{fragments/layout :: mensajes}"></div>
+
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">ADMINISTRACIÓN / PRODUCTOS</p>
+          <h1
+            th:text="${id == null ? 'Crear producto' : 'Editar producto'}"
+          ></h1>
+          <p>Defina los datos del producto y su nivel mínimo de existencias.</p>
+        </div>
+        <a class="btn btn-outline-secondary" th:href="@{/productos}"
+          >Volver a productos</a
+        >
+      </div>
+      <form
+        class="form-panel"
+        th:action="${id == null} ? @{/admin/productos} : @{/admin/productos/{id}(id=${id})}"
+        th:object="${form}"
+        method="post"
+      >
+        <div th:replace="~{fragments/layout :: errores}"></div>
+        <div class="row g-4">
+          <div class="col-md-4">
+            <label for="codigo" class="form-label">Código *</label
+            ><input
+              id="codigo"
+              th:field="*{codigo}"
+              class="form-control"
+              required
+              maxlength="50"
+            />
+          </div>
+          <div class="col-md-8">
+            <label for="nombre" class="form-label">Nombre *</label
+            ><input
+              id="nombre"
+              th:field="*{nombre}"
+              class="form-control"
+              required
+              maxlength="120"
+            />
+          </div>
+          <div class="col-12">
+            <label for="descripcion" class="form-label">Descripción</label
+            ><textarea
+              id="descripcion"
+              th:field="*{descripcion}"
+              class="form-control"
+              rows="3"
+              maxlength="500"
+            ></textarea>
+          </div>
+          <div class="col-md-4">
+            <label for="categoriaId" class="form-label">Categoría *</label
+            ><select
+              id="categoriaId"
+              th:field="*{categoriaId}"
+              class="form-select"
+              required
+            >
+              <option value="">Seleccione</option>
+              <option
+                th:each="c : ${categorias}"
+                th:value="${c.id}"
+                th:text="${c.nombre}"
+              ></option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="marcaId" class="form-label">Marca *</label
+            ><select
+              id="marcaId"
+              th:field="*{marcaId}"
+              class="form-select"
+              required
+            >
+              <option value="">Seleccione</option>
+              <option
+                th:each="m : ${marcas}"
+                th:value="${m.id}"
+                th:text="${m.nombre}"
+              ></option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="stockMinimo" class="form-label">Stock mínimo *</label
+            ><input
+              id="stockMinimo"
+              th:field="*{stockMinimo}"
+              type="number"
+              class="form-control"
+              required
+              min="0"
+              max="2147483647"
+              step="1"
+            />
+          </div>
+          <div class="col-12">
+            <label class="form-check"
+              ><input
+                type="checkbox"
+                class="form-check-input"
+                th:field="*{activo}"
+              /><span class="form-check-label">Producto activo</span></label
+            >
+          </div>
+        </div>
+        <p class="form-note mt-4">
+          El stock inicial es cero. Las existencias se actualizan únicamente al
+          registrar entradas.
+        </p>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">Guardar producto</button
+          ><a class="btn btn-outline-secondary" th:href="@{/productos}"
+            >Cancelar</a
+          >
+        </div>
+      </form>
+    </main>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+  </body>
+</html>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html
+  lang="es"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{fragments/layout :: head('Usuarios')}"></head>
+  <body>
+    <div th:replace="~{fragments/layout :: nav}"></div>
+    <main class="container-xl py-4 py-lg-5" id="contenido">
+      <div th:replace="~{fragments/layout :: mensajes}"></div>
+
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">ADMINISTRACIÓN / ACCESOS</p>
+          <h1>Usuarios</h1>
+          <p>Administre las cuentas, sus roles y el acceso al sistema.</p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/admin/usuarios/nuevo}"
+          >+ Crear usuario</a
+        >
+      </div>
+      <section class="table-panel">
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="u : ${usuarios}">
+                <td><strong th:text="${u.username}"></strong></td>
+                <td
+                  th:text="${u.rol.name() == 'ADMIN' ? 'Administrador' : 'Bodeguero'}"
+                ></td>
+                <td>
+                  <span
+                    class="badge"
+                    th:classappend="${u.estado ? 'badge-active' : 'badge-inactive'}"
+                    th:text="${u.estado ? 'Activo' : 'Inactivo'}"
+                  ></span>
+                </td>
+                <td>
+                  <a
+                    class="btn btn-sm btn-outline-primary"
+                    th:href="@{/admin/usuarios/{id}/editar(id=${u.id})}"
+                    >Editar acceso</a
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+  </body>
+</html>

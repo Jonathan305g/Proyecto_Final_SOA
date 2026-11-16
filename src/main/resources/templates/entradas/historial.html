@@ -1,0 +1,90 @@
+<!doctype html>
+<html
+  lang="es"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head
+    th:replace="~{fragments/layout :: head('Historial de entradas')}"
+  ></head>
+  <body>
+    <div th:replace="~{fragments/layout :: nav}"></div>
+    <main class="container-xl py-4 py-lg-5" id="contenido">
+      <div th:replace="~{fragments/layout :: mensajes}"></div>
+
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">BODEGA / TRAZABILIDAD</p>
+          <h1>Historial de entradas</h1>
+          <p>Registro permanente de las recepciones de productos.</p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/entradas/nueva}"
+          >+ Registrar entrada</a
+        >
+      </div>
+      <section class="table-panel">
+        <div class="table-top">
+          <h2>Entradas registradas</h2>
+          <span th:text="${pagina.totalElements} + ' registros'"></span>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Fecha / hora</th>
+                <th>Producto</th>
+                <th class="text-end">Cantidad</th>
+                <th>Proveedor</th>
+                <th>Responsable</th>
+                <th>Observación</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="e : ${pagina.content}">
+                <td
+                  class="text-nowrap"
+                  th:text="${#temporals.format(e.fecha, 'dd/MM/yyyy HH:mm:ss')}"
+                ></td>
+                <td>
+                  <span class="code" th:text="${e.producto.codigo}"></span
+                  ><strong
+                    class="d-block"
+                    th:text="${e.producto.nombre}"
+                  ></strong>
+                </td>
+                <td class="text-end">
+                  <span class="quantity" th:text="'+' + ${e.cantidad}"></span>
+                </td>
+                <td th:text="${e.proveedor.nombre}"></td>
+                <td th:text="${e.usuarioResponsable.username}"></td>
+                <td th:text="${e.observacion}"></td>
+              </tr>
+              <tr th:if="${pagina.empty}">
+                <td colspan="6" class="empty-state">
+                  Todavía no se han registrado entradas de inventario.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-bar">
+          <a
+            class="btn btn-sm btn-outline-secondary"
+            th:if="${pagina.hasPrevious()}"
+            th:href="@{/entradas(page=${pagina.number - 1})}"
+            >← Anterior</a
+          ><span
+            th:text="'Página ' + ${pagina.number + 1} + ' de ' + ${T(java.lang.Math).max(1,pagina.totalPages)}"
+          ></span
+          ><a
+            class="btn btn-sm btn-outline-secondary"
+            th:if="${pagina.hasNext()}"
+            th:href="@{/entradas(page=${pagina.number + 1})}"
+            >Siguiente →</a
+          >
+        </div>
+      </section>
+    </main>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+  </body>
+</html>

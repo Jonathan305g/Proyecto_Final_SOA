@@ -1,0 +1,164 @@
+<!doctype html>
+<html
+  lang="es"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head
+    th:replace="~{fragments/layout :: head('Productos e inventario')}"
+  ></head>
+  <body>
+    <div th:replace="~{fragments/layout :: nav}"></div>
+    <main class="container-xl py-4 py-lg-5" id="contenido">
+      <div th:replace="~{fragments/layout :: mensajes}"></div>
+
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">BODEGA / CONSULTA</p>
+          <h1 th:text="${esInventario ? 'Inventario' : 'Productos'}">
+            Productos
+          </h1>
+          <p>Información actual de los productos registrados.</p>
+        </div>
+        <a
+          sec:authorize="hasRole('ADMIN')"
+          class="btn btn-primary"
+          th:href="@{/admin/productos/nuevo}"
+          >+ Crear producto</a
+        >
+      </div>
+      <form
+        class="filter-bar row g-3 align-items-end"
+        method="get"
+        th:action="@{${ruta}}"
+      >
+        <div class="col-md-6">
+          <label for="q" class="form-label">Código o nombre</label
+          ><input
+            id="q"
+            name="q"
+            class="form-control"
+            th:value="${q}"
+            placeholder="Buscar un producto…"
+            maxlength="120"
+          />
+        </div>
+        <div class="col-md-3">
+          <label for="categoria" class="form-label">Categoría</label
+          ><select id="categoria" name="categoria" class="form-select">
+            <option value="">Todas las categorías</option>
+            <option
+              th:each="c : ${categorias}"
+              th:value="${c.id}"
+              th:text="${c.nombre}"
+              th:selected="${categoria == c.id}"
+            ></option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+          <button class="btn btn-primary" type="submit">Buscar</button
+          ><a class="btn btn-outline-secondary" th:href="@{${ruta}}">Limpiar</a>
+        </div>
+      </form>
+      <section class="table-panel">
+        <div class="table-top">
+          <h2
+            th:text="${esInventario ? 'Existencias actuales' : 'Catálogo de productos'}"
+          ></h2>
+          <span th:text="${pagina.totalElements} + ' productos'"></span>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Código / Producto</th>
+                <th>Categoría / Marca</th>
+                <th class="text-end">Stock actual</th>
+                <th class="text-end">Stock mínimo</th>
+                <th>Estado</th>
+                <th sec:authorize="hasRole('ADMIN')">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="p : ${pagina.content}">
+                <td>
+                  <span class="code" th:text="${p.codigo}"></span
+                  ><strong class="d-block" th:text="${p.nombre}"></strong
+                  ><small
+                    class="text-secondary"
+                    th:text="${p.descripcion}"
+                  ></small>
+                </td>
+                <td>
+                  <span th:text="${p.categoria.nombre}"></span
+                  ><small
+                    class="d-block text-secondary"
+                    th:text="${p.marca.nombre}"
+                  ></small>
+                </td>
+                <td class="text-end">
+                  <strong th:text="${p.stockActual}"></strong
+                  ><small
+                    th:if="${p.stockActual &lt;= p.stockMinimo}"
+                    class="d-block text-warning-emphasis"
+                    >Stock mínimo</small
+                  >
+                </td>
+                <td class="text-end" th:text="${p.stockMinimo}"></td>
+                <td>
+                  <span
+                    class="badge"
+                    th:classappend="${p.activo ? 'badge-active' : 'badge-inactive'}"
+                    th:text="${p.activo ? 'Activo' : 'Inactivo'}"
+                  ></span>
+                </td>
+                <td sec:authorize="hasRole('ADMIN')">
+                  <div class="d-flex flex-wrap gap-2">
+                    <a
+                      class="btn btn-sm btn-outline-primary"
+                      th:href="@{/admin/productos/{id}/editar(id=${p.id})}"
+                      >Editar</a
+                    >
+                    <form
+                      th:action="@{/admin/productos/{id}/eliminar(id=${p.id})}"
+                      method="post"
+                    >
+                      <button
+                        type="submit"
+                        class="btn btn-sm btn-outline-danger"
+                      >
+                        Eliminar / desactivar
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              <tr th:if="${pagina.empty}">
+                <td colspan="6" class="empty-state">
+                  No hay productos que coincidan con la búsqueda.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-bar">
+          <a
+            class="btn btn-sm btn-outline-secondary"
+            th:if="${pagina.hasPrevious()}"
+            th:href="@{${ruta}(page=${pagina.number - 1},q=${q},categoria=${categoria})}"
+            >← Anterior</a
+          ><span
+            th:text="'Página ' + ${pagina.number + 1} + ' de ' + ${T(java.lang.Math).max(1,pagina.totalPages)}"
+          ></span
+          ><a
+            class="btn btn-sm btn-outline-secondary"
+            th:if="${pagina.hasNext()}"
+            th:href="@{${ruta}(page=${pagina.number + 1},q=${q},categoria=${categoria})}"
+            >Siguiente →</a
+          >
+        </div>
+      </section>
+    </main>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+  </body>
+</html>

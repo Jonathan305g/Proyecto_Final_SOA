@@ -1,0 +1,81 @@
+<!doctype html>
+<html
+  lang="es"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{fragments/layout :: head('Catálogos')}"></head>
+  <body>
+    <div th:replace="~{fragments/layout :: nav}"></div>
+    <main class="container-xl py-4 py-lg-5" id="contenido">
+      <div th:replace="~{fragments/layout :: mensajes}"></div>
+
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">ADMINISTRACIÓN / CATÁLOGOS</p>
+          <h1 th:text="${titulo}"></h1>
+          <p>Gestione la información de referencia del inventario.</p>
+        </div>
+        <a
+          class="btn btn-primary"
+          th:href="@{/admin/{tipo}/nuevo(tipo=${tipo})}"
+          >+ Crear registro</a
+        >
+      </div>
+      <section class="table-panel">
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th th:if="${tipo == 'proveedores'}">Teléfono</th>
+                <th th:if="${tipo == 'proveedores'}">Correo electrónico</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="f : ${filas}">
+                <td><strong th:text="${f.nombre}"></strong></td>
+                <td
+                  th:if="${tipo == 'proveedores'}"
+                  th:text="${f.telefono}"
+                ></td>
+                <td th:if="${tipo == 'proveedores'}" th:text="${f.correo}"></td>
+                <td>
+                  <div class="d-flex gap-2">
+                    <a
+                      class="btn btn-sm btn-outline-primary"
+                      th:href="@{/admin/{tipo}/{id}/editar(tipo=${tipo},id=${f.id})}"
+                      >Editar</a
+                    >
+                    <form
+                      th:action="@{/admin/{tipo}/{id}/eliminar(tipo=${tipo},id=${f.id})}"
+                      method="post"
+                    >
+                      <button
+                        class="btn btn-sm btn-outline-danger"
+                        type="submit"
+                      >
+                        Eliminar
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(filas)}">
+                <td colspan="4" class="empty-state">
+                  No hay registros. Cree el primero para empezar.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <p class="form-note mt-3">
+        Los registros asociados a productos o entradas se conservan para
+        proteger la integridad del inventario.
+      </p>
+    </main>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+  </body>
+</html>

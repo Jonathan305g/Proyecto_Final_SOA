@@ -1,0 +1,72 @@
+<!doctype html>
+<html
+  lang="es"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{fragments/layout :: head('Editar catálogo')}"></head>
+  <body>
+    <div th:replace="~{fragments/layout :: nav}"></div>
+    <main class="container-xl py-4 py-lg-5" id="contenido">
+      <div th:replace="~{fragments/layout :: mensajes}"></div>
+
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow" th:text="'ADMINISTRACIÓN / ' + ${titulo}"></p>
+          <h1
+            th:text="${id == null ? 'Crear registro' : 'Editar registro'}"
+          ></h1>
+        </div>
+        <a
+          class="btn btn-outline-secondary"
+          th:href="@{/admin/{tipo}(tipo=${tipo})}"
+          >Volver al catálogo</a
+        >
+      </div>
+      <form
+        class="form-panel form-narrow"
+        th:action="${id == null} ? @{/admin/{tipo}(tipo=${tipo})} : @{/admin/{tipo}/{id}(tipo=${tipo},id=${id})}"
+        th:object="${form}"
+        method="post"
+      >
+        <div th:replace="~{fragments/layout :: errores}"></div>
+        <label for="nombre" class="form-label">Nombre *</label
+        ><input
+          id="nombre"
+          th:field="*{nombre}"
+          class="form-control"
+          required
+          th:maxlength="${tipo == 'proveedores' ? 120 : 100}"
+        />
+        <div th:if="${tipo == 'proveedores'}">
+          <label for="telefono" class="form-label mt-4">Teléfono</label
+          ><input
+            id="telefono"
+            th:field="*{telefono}"
+            type="tel"
+            maxlength="30"
+            class="form-control"
+            pattern="[0-9\+\(\) .\-]*"
+          /><label for="correo" class="form-label mt-4"
+            >Correo electrónico</label
+          ><input
+            id="correo"
+            th:field="*{correo}"
+            type="email"
+            maxlength="160"
+            class="form-control"
+          />
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">Guardar registro</button
+          ><a
+            class="btn btn-outline-secondary"
+            th:href="@{/admin/{tipo}(tipo=${tipo})}"
+            >Cancelar</a
+          >
+        </div>
+      </form>
+    </main>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+  </body>
+</html>

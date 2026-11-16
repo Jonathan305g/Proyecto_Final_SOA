@@ -1,0 +1,25 @@
+<!doctype html>
+<html
+  lang="es"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head
+    th:replace="~{fragments/layout :: head('Operación no disponible')}"
+  ></head>
+  <body>
+    <div th:replace="~{fragments/layout :: nav}"></div>
+    <main class="container-xl py-4 py-lg-5" id="contenido">
+      <div th:replace="~{fragments/layout :: mensajes}"></div>
+      <section class="form-panel">
+        <p class="eyebrow">ERROR 500</p>
+        <h1>Operación no disponible</h1>
+        <p
+          th:text="${mensaje ?: 'No se pudo completar la operación. Inténtelo nuevamente.'}"
+        ></p>
+        <a class="btn btn-primary" th:href="@{/}">Volver al inicio</a>
+      </section>
+    </main>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+  </body>
+</html>
