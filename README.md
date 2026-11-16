@@ -2,11 +2,11 @@
 
 Proyecto académico de la **Universidad Técnica de Ambato**, **FISEI**, carrera de **Ingeniería en Software**, asignatura **Aplicaciones Orientadas a Servicios (SOA)**.
 
-Aplicación MVC para administrar productos, registrar recepciones y mantener sus existencias e historial. El cliente se renderiza en el servidor con Thymeleaf. Los catálogos y el inventario comienzan vacíos; no se insertan datos de demostración.
+Aplicación MVC para administrar productos, registrar recepciones y mantener sus existencias e historial. El cliente se renderiza en el servidor con Thymeleaf. La instalación inicial incluye catálogos y proveedores de demostración, y **un solo producto de ejemplo con stock cero**, para practicar el registro de entradas. Los datos de ejemplo se identifican con `DEMO`.
 
 Repositorio del equipo: **https://github.com/ManuelCusme/ProyectoSOA**.
 
-Cada integrante ejecuta el proyecto contra su propia base local. El repositorio incluye el código y el esquema SQL; las cuentas, contraseñas y registros de la base de un compañero no se descargan al clonar.
+Cada integrante ejecuta el proyecto contra su propia base local. El repositorio incluye el código y el SQL de creación con sus datos iniciales; cada compañero genera sus propias cuentas y contraseñas privadas para la importación. Los registros y las credenciales de otra instalación no se descargan al clonar.
 
 ## Inicio rápido para el equipo con IntelliJ IDEA
 
@@ -56,7 +56,30 @@ En el archivo copiado, complete `app.bootstrap.username`, `app.bootstrap.passwor
 
 **No suba `.local/application.properties` ni comparta sus contraseñas en el repositorio.** `.gitignore` excluye toda la carpeta `.local/`. Cada compañero tiene su propia contraseña; no hay una clave universal para el equipo.
 
-### 4. Ejecutar desde IntelliJ
+### 4. Preparar e importar toda la base en phpMyAdmin
+
+Con el archivo privado del paso 3 configurado, ejecute desde la raíz:
+
+```powershell
+.\scripts\preparar-importacion.ps1
+```
+
+Este comando utiliza **PHP incluido en XAMPP únicamente para generar hashes BCrypt**. La aplicación web sigue funcionando con Java. Si XAMPP está instalado en otra ubicación, indique por ejemplo `-RutaPhp 'D:\xampp\php\php.exe'`.
+
+Se generan dos archivos dentro de `.local/`, ambos ignorados por Git:
+
+- **`importar-inventario.sql`**: crea la base `inventario_bodega`, las seis tablas, los datos iniciales y las cuentas ADMIN y BODEGUERO con hashes BCrypt.
+- **`credenciales-importacion.properties`**: guarda los usuarios y contraseñas para iniciar sesión. El administrador usa la clave local configurada; el bodeguero recibe una clave aleatoria propia de esa instalación.
+
+Encienda también **Apache** en XAMPP y abra **http://localhost/phpmyadmin** (ajuste el puerto de Apache si corresponde). Desde la página principal del servidor, entre en **Importar**, seleccione **`.local/importar-inventario.sql`**, mantenga el formato **SQL** y la codificación **utf-8**, y ejecute la importación. **No necesita crear ni seleccionar la base previamente**: el archivo incluye `CREATE DATABASE` y `USE inventario_bodega`.
+
+Después, seleccione `inventario_bodega` en el panel izquierdo y compruebe las seis tablas. La sección **Base de datos e importación completa en phpMyAdmin** explica los registros creados, la importación directa de `schema.sql` y qué ocurre si la base ya contiene información.
+
+**El SQL generado contiene hashes privados y el archivo de credenciales contiene contraseñas: no publique ninguno.** Si vuelve a ejecutar el generador, conserva las claves ya generadas y vuelve a preparar el SQL con el `schema.sql` actual. Importarlo sobre usuarios existentes no cambia sus contraseñas.
+
+Si la política de su equipo impide ejecutar también este segundo script, puede importar directamente `src/main/resources/schema.sql`, iniciar Java con la configuración privada y crear al bodeguero desde **Usuarios**, como se explica en la guía de importación.
+
+### 5. Ejecutar desde IntelliJ
 
 El repositorio incluye la configuración compartida **InventarioBodega** en `.run/InventarioBodega.run.xml`. Selecciónela en el menú de ejecución de IntelliJ y pulse **Run**. Utiliza la clase principal y la raíz del proyecto como directorio de trabajo, sin incluir credenciales.
 
@@ -83,22 +106,21 @@ Como alternativa, desde la terminal de IntelliJ:
 .\mvnw.cmd spring-boot:run
 ```
 
-Ejecute **una sola instancia**: use el botón Run o el comando de terminal. Al iniciar, la aplicación crea `inventario_bodega` si tiene permisos, ejecuta `schema.sql`, valida las seis tablas y crea el primer administrador si `usuarios` está vacía. Si el usuario de la base no tiene permisos de creación, siga la sección **Base de datos y esquema** de este README.
+Ejecute **una sola instancia**: use el botón Run o el comando de terminal. Al iniciar, la aplicación ejecuta el mismo `schema.sql` y valida las tablas; una base ya importada conserva sus datos. Si omitió la importación, Spring también puede crear la base y cargar los ejemplos cuando los catálogos están vacíos, y crea el primer administrador desde la configuración local si `usuarios` está vacía. Para recibir también el bodeguero inicial antes del primer arranque, utilice la importación completa del paso 4.
 
-### 5. Entrar y comprobar el funcionamiento
+### 6. Entrar y comprobar el funcionamiento
 
-Abra **http://localhost:8080/login**. Ingrese con el usuario y contraseña de **su propio** archivo `.local/application.properties`.
+Abra **http://localhost:8080/login**. Si realizó la importación completa, consulte los usuarios y contraseñas en **`.local/credenciales-importacion.properties`**. Si usó solo el arranque automático, ingrese con el administrador de `.local/application.properties`.
 
-1. Cree una categoría, una marca y un proveedor.
-2. Cree un producto con stock mínimo `5`. Su stock actual comienza en `0`.
-3. Registre una entrada de `10` unidades. El inventario debe mostrar `10`.
-4. Registre otra de `3`. El stock debe quedar en `13` y el historial debe tener ambas entradas con fecha y responsable.
-5. Cree una cuenta con rol **BODEGUERO**, cierre sesión e ingrese con ella. Podrá consultar y registrar entradas; al visitar `/admin/usuarios` se le denegará el acceso.
-6. Como administrador, intente eliminar el producto con historial: se desactivará conservando las entradas.
+1. Revise los catálogos iniciales y el producto **`DEMO-001`**, con stock actual `0` y stock mínimo `5`. También puede crear sus propios catálogos y productos.
+2. Registre una entrada de `10` unidades para ese producto, seleccionando uno de los proveedores de ejemplo. El inventario debe mostrar `10`.
+3. Registre otra de `3`. El stock debe quedar en `13` y el historial debe tener ambas entradas con fecha y responsable.
+4. Cierre sesión e ingrese como **bodeguero**, con su clave privada generada. Podrá consultar y registrar entradas; al visitar `/admin/usuarios` se le denegará el acceso. Si utilizó el arranque sin importación de cuentas, cree primero ese usuario desde **Usuarios**.
+5. Como administrador, intente eliminar el producto con historial: se desactivará conservando las entradas.
 
-Estos son datos que cada integrante registra manualmente para probar; no se cargan ejemplos automáticamente. Cambiar la contraseña de inicialización en el archivo local **no cambia una cuenta ya creada**; para eso use **Usuarios → Editar acceso** desde una cuenta administradora.
+Las entradas de `10` y `3` son ejercicios para registrar manualmente; el SQL **no inventa entradas ni stock**. Cambiar la contraseña de inicialización en un archivo local **no cambia una cuenta ya creada**; para eso use **Usuarios → Editar acceso** desde una cuenta administradora.
 
-### 6. Detener, volver a iniciar y actualizar
+### 7. Detener, volver a iniciar y actualizar
 
 Detenga la aplicación con el botón rojo **Stop** de IntelliJ o **Ctrl+C** si la inició desde la terminal. La base conserva los registros; las sesiones del navegador se cierran al reiniciar.
 
@@ -153,18 +175,40 @@ La configuración utiliza `jdbc:mysql://...` y el controlador `com.mysql.cj.jdbc
 3. Abra XAMPP Control Panel e inicie su módulo **MySQL** (en esta instalación ejecuta MariaDB). Confirme el puerto en `C:\xampp\mysql\bin\my.ini`; aquí es **3307**, mientras otras instalaciones usan 3306.
 4. Si desea usar phpMyAdmin, inicie también Apache y abra `http://localhost/phpmyadmin`. Su puerto de Apache puede ser diferente.
 
-## Base de datos y esquema
+## Base de datos e importación completa en phpMyAdmin
 
 La base se llama obligatoriamente **`inventario_bodega`**. El parámetro JDBC `createDatabaseIfNotExist=true` permite crearla al iniciar si el usuario tiene permisos. Si el servidor no responde, la aplicación falla con el error de conexión; no usa H2 ni otra base sustituta.
 
-El único archivo que define las tablas es [`src/main/resources/schema.sql`](src/main/resources/schema.sql). Spring lo ejecuta al iniciar y sus instrucciones `CREATE TABLE IF NOT EXISTS` conservan los datos. Hibernate usa **`ddl-auto=validate`**: comprueba las correspondencias, sin crear ni modificar tablas por su cuenta. No cambie esta propiedad a `create` o `create-drop`.
+El archivo [`src/main/resources/schema.sql`](src/main/resources/schema.sql) es la definición única de **la base, las seis tablas y los datos iniciales**. Incluye `CREATE DATABASE IF NOT EXISTS inventario_bodega`, `USE inventario_bodega`, las tablas con sus relaciones y las inserciones de inicio. No contiene contraseñas fijas.
 
-Para crearla manualmente desde phpMyAdmin:
+El generador [`scripts/preparar-importacion.ps1`](scripts/preparar-importacion.ps1) **antepone al mismo SQL** los nombres de las dos cuentas y sus hashes BCrypt privados. No mantiene una segunda definición de tablas. El SQL completo se escribe en `.local/importar-inventario.sql`.
 
-1. Ejecute [`database/crear-base.sql`](database/crear-base.sql) en la pestaña **SQL**.
-2. Seleccione `inventario_bodega`.
-3. En **Importar**, seleccione `src/main/resources/schema.sql` y ejecute la importación.
-4. Inicie la aplicación. Se validará el mismo esquema.
+Para una instalación completa desde cero:
+
+1. Configure Java 21 y el archivo privado `.local/application.properties`, como indica el inicio rápido.
+2. Ejecute `scripts/preparar-importacion.ps1`. Requiere el `php.exe` de XAMPP; no necesita instalar bibliotecas adicionales.
+3. Inicie MySQL y Apache en XAMPP. Entre a phpMyAdmin con un usuario que pueda crear `inventario_bodega` y sus tablas.
+4. Desde la pantalla principal del servidor, seleccione **Importar → Seleccionar archivo → `.local/importar-inventario.sql`**. Use formato **SQL** y codificación **utf-8**, y pulse **Importar / Continuar**, según su versión.
+5. Verifique el mensaje de ejecución correcta y seleccione `inventario_bodega` en el panel lateral.
+6. Abra **Examinar** en cada tabla y compruebe los datos de la siguiente tabla.
+7. Ejecute `InventarioBodega` en IntelliJ. Entre al login con los datos de `.local/credenciales-importacion.properties`.
+
+En una base sin información previa, la importación completa deja:
+
+| Tabla                 | Registros iniciales                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------ |
+| `usuarios`            | 2 cuentas activas: administrador (`ADMIN`) y bodeguero (`BODEGUERO`), con sus claves privadas.   |
+| `categorias`          | 3: `DEMO - Papelería`, `DEMO - Herramientas`, `DEMO - Limpieza`.                                 |
+| `marcas`              | 2: `DEMO - Genérica`, `DEMO - Oficina`.                                                          |
+| `proveedores`         | 2 proveedores `DEMO`, con correos de ejemplo terminados en `.invalid` y sin teléfonos reales.    |
+| `productos`           | **1**: `DEMO-001`, nombre `Producto de ejemplo`, stock actual **0**, stock mínimo **5**, activo. |
+| `entradas_inventario` | **0**. Las entradas se registran desde la aplicación con fecha y responsable reales.             |
+
+**Si importa directamente `src/main/resources/schema.sql`**, se crean igualmente la base, las tablas, los catálogos, los proveedores y el producto. Las cuentas se omiten porque el archivo público no contiene hashes de contraseñas universales: el administrador se creará al iniciar Java con la configuración local y podrá crear al bodeguero desde **Usuarios**. Para importar también ambas cuentas en un solo paso, use el SQL generado de `.local/`.
+
+Si ya hay datos, el SQL no borra ni actualiza registros existentes. Los ejemplos se insertan solamente cuando **categorías, marcas, proveedores y productos están todos vacíos**. Los dos usuarios se insertan solamente si **`usuarios` está vacía** y el SQL tiene los hashes privados de ambas cuentas. Por tanto, repetir una importación o reiniciar Spring conserva nombres editados, contraseñas, stock, entradas y productos desactivados. No se repone un ejemplo eliminado si todavía quedan otros datos en esos cuatro catálogos.
+
+Spring ejecuta este mismo `schema.sql` al iniciar. Hibernate usa **`ddl-auto=validate`**: comprueba las correspondencias, sin crear ni modificar tablas por su cuenta. No cambie esta propiedad a `create` o `create-drop`. [`database/crear-base.sql`](database/crear-base.sql) queda como opción para preparar únicamente la base y sus permisos; **no es un paso previo obligatorio** para importar el SQL completo.
 
 Si ya existe un esquema incompatible, la validación informa el problema; el sistema no elimina ni migra datos existentes automáticamente.
 
@@ -185,7 +229,7 @@ No se crean tablas de roles, sesiones, caché ni auditoría. Las sesiones HTTP r
 
 ## Configuración privada y primer administrador
 
-No hay una contraseña administrativa fija en el código. Con la tabla `usuarios` vacía, el inicializador crea **una cuenta ADMIN activa** usando configuración privada y almacena únicamente su hash BCrypt. Si faltan las credenciales, el inicio se detiene con un mensaje de configuración. Cuando hay usuarios, el inicializador no reemplaza sus credenciales.
+No hay una contraseña administrativa fija en el código. La importación privada puede crear las dos cuentas con BCrypt antes de arrancar Java. Si inicia sin esas cuentas y `usuarios` está vacía, el inicializador crea **una cuenta ADMIN activa** usando configuración privada y almacena únicamente su hash BCrypt. Si faltan las credenciales, el inicio se detiene con un mensaje de configuración. Cuando hay usuarios, el inicializador no reemplaza sus credenciales.
 
 ### Opción A: archivo local con contraseña aleatoria
 
@@ -327,6 +371,8 @@ src/test/java/ec/edu/uta/inventariobodega/
   BaseDatosIntegrationTests.java
 database/crear-base.sql
 scripts/configurar-local.ps1
+scripts/preparar-importacion.ps1  Genera el SQL completo con cuentas privadas
+scripts/generar-hashes.php      Herramienta local de XAMPP para BCrypt
 .local.example.properties
 .run/InventarioBodega.run.xml  Configuración IntelliJ compartida, sin secretos
 ```
@@ -335,11 +381,13 @@ scripts/configurar-local.ps1
 
 Las pruebas unitarias usan objetos simulados y no requieren base de datos. Las de integración cargan la aplicación, ejecutan MVC con Spring Security y Thymeleaf y usan **la base real de XAMPP a través de MySQL Connector/J**. Solo se habilitan con `RUN_DB_TESTS=true`.
 
-Las pruebas de integración crean datos identificados con un prefijo aleatorio `test_` y eliminan únicamente sus propios registros al terminar. No vacían tablas, no eliminan bases y no insertan información de demostración permanente. Requieren permisos de lectura, escritura y eliminación sobre `inventario_bodega`; la cuenta inicial se prepara mediante el procedimiento descrito arriba.
+Las pruebas de integración crean datos identificados con un prefijo aleatorio `test_` y eliminan únicamente sus propios registros al terminar. No vacían tablas ni eliminan bases; los ejemplos iniciales del esquema se conservan. Requieren permisos de lectura, escritura y eliminación sobre `inventario_bodega`; la cuenta inicial se prepara mediante el procedimiento descrito arriba.
 
 Los informes detallados de la última ejecución están en `target/surefire-reports/`. El resultado final y las comprobaciones HTTP/navegador se registran también en [`docs/VALIDACION.md`](docs/VALIDACION.md).
 
 Última ejecución, **16 de noviembre de 2026**, con `jdbc:mysql` y MySQL Connector/J sobre XAMPP: **35 pruebas aprobadas** (11 unitarias y 24 de integración), **0 fallos, 0 errores y 0 omitidas**. `clean verify` generó el JAR actualizado. Los detalles y la comprobación previa en Chrome están en `docs/VALIDACION.md`.
+
+La nueva importación completa también se verificó desde cero en un servidor temporal independiente: seis tablas, los datos iniciales indicados, un único producto con stock cero, cuentas BCrypt que autentican correctamente y reimportaciones que conservan los datos existentes.
 
 ## Alcance y límites
 
@@ -356,3 +404,4 @@ El módulo MySQL de este XAMPP ejecuta internamente MariaDB 10.4.32. MySQL Conne
 - [Documentación de MySQL Connector/J](https://dev.mysql.com/doc/connector-j/en/)
 - [Abrir proyectos Maven en IntelliJ IDEA](https://www.jetbrains.com/help/idea/maven-support.html)
 - [Configuración de ejecución Java en IntelliJ IDEA](https://www.jetbrains.com/help/idea/run-debug-configuration-java-application.html)
+- [Importar archivos SQL en phpMyAdmin](https://docs.phpmyadmin.net/en/latest/import_export.html)

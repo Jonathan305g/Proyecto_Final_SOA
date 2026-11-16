@@ -1,5 +1,26 @@
 # Validación del proyecto
 
+## Importación completa y datos iniciales — 16 de noviembre de 2026
+
+`schema.sql` ahora crea `inventario_bodega`, selecciona esa base, crea las seis tablas y carga los datos iniciales cuando los catálogos están vacíos. Incluye las instrucciones para insertar las dos cuentas cuando recibe sus hashes privados. El generador `scripts/preparar-importacion.ps1` combina las cuentas privadas con ese mismo archivo; no mantiene un esquema duplicado ni publica claves.
+
+La prueba de importación se realizó con los ejecutables MySQL de XAMPP en un **servidor temporal independiente**, puerto **13307**, cuyo directorio de datos está en `.local/mysql-validacion-schema/data`. No se usó ni modificó el directorio de datos habitual de XAMPP. La base de prueba también se llama `inventario_bodega` y contiene solamente las seis tablas de negocio.
+
+Verificaciones aprobadas:
+
+- Importación del archivo público sin una base previamente creada: seis tablas, tres categorías, dos marcas, dos proveedores, un producto con stock cero y ningún movimiento.
+- Importación del archivo privado generado: dos cuentas activas con roles ADMIN y BODEGUERO y contraseñas BCrypt válidas. Los hashes `$2y$` generados por PHP de XAMPP se verificaron también mediante autenticación real de Spring Security.
+- Repetición de la importación pública y privada sin duplicar filas ni sobrescribir contraseñas.
+- Conservación de nombres editados, un catálogo eliminado, entradas registradas y stock incrementado después de volver a importar.
+- Regeneración del SQL privado conservando las contraseñas anteriores.
+- `php -l scripts/generar-hashes.php`: sintaxis correcta en PHP 8.2.12. PHP solo se usa como herramienta local para generar BCrypt; el servidor de la aplicación permanece en Java.
+- `RUN_DB_TESTS=true` y `mvnw.cmd -B clean verify` con la conexión MySQL apuntando al servidor temporal: **35 aprobadas, 0 fallos, 0 errores y 0 omitidas**. Se generó el JAR actualizado.
+- Arranque del JAR en el puerto temporal **18080**: administrador y bodeguero importados iniciaron sesión y consultaron el inventario; el administrador accedió a usuarios y el bodeguero recibió 403.
+
+Los registros de esta verificación están en `.local/mysql-validacion-schema/`. Se comprobó la ejecución de los archivos SQL con el cliente de MySQL; la guía de phpMyAdmin describe cómo importar esos mismos archivos, sin afirmar que se automatizó su interfaz gráfica. Los servidores temporales se detienen al finalizar y la aplicación del puerto 8080 permanece apagada.
+
+En una instalación nueva, la carga completa deja **2 usuarios, 3 categorías, 2 marcas, 2 proveedores, 1 producto con stock 0 y 0 entradas**. Las cuentas y los datos propios de una instalación existente se conservan.
+
 ## Actualización: conexión MySQL — 16 de noviembre de 2026
 
 La aplicación quedó **apagada** a petición del usuario. Se cambió la conexión de los archivos de configuración generales, locales y de ejemplo a `jdbc:mysql`, con el controlador `com.mysql.cj.jdbc.Driver`. Se eliminó la dependencia `mariadb-java-client` y se mantuvo `mysql-connector-j`.
