@@ -62,16 +62,43 @@ public class EntradaController {
       try {
         servicio.registrar(f, usuario.getName());
         flash.addFlashAttribute(
-            "exito", "Entrada registrada. Las existencias se actualizaron correctamente.");
+            "exito", "Pedido registrado exitosamente en estado PENDIENTE. Esperando aprobación del administrador.");
         return "redirect:/entradas";
       } catch (ReglaNegocioException ex) {
         errors.reject("negocio", ex.getMessage());
       } catch (org.springframework.dao.DataAccessException ex) {
         errors.reject(
             "persistencia",
-            "No se pudo confirmar la entrada. No se guardó ningún cambio. Revise los datos e"
+            "No se pudo registrar el pedido. No se guardó ningún cambio. Revise los datos e"
                 + " intente de nuevo.");
       }
     return vista(m);
+  }
+
+  @PostMapping("/{id}/aprobar")
+  public String aprobar(@PathVariable Long id, RedirectAttributes flash) {
+    try {
+      servicio.aprobar(id);
+      flash.addFlashAttribute(
+          "exito", "Pedido aprobado exitosamente. Se descontaron las unidades correspondientes del inventario.");
+    } catch (ReglaNegocioException ex) {
+      flash.addFlashAttribute("error", ex.getMessage());
+    }
+    return "redirect:/entradas";
+  }
+
+  @PostMapping("/{id}/rechazar")
+  public String rechazar(
+      @PathVariable Long id,
+      @RequestParam(required = false) String motivo,
+      RedirectAttributes flash) {
+    try {
+      servicio.rechazar(id, motivo);
+      flash.addFlashAttribute(
+          "exito", "Pedido rechazado. El stock de existencias no fue modificado.");
+    } catch (ReglaNegocioException ex) {
+      flash.addFlashAttribute("error", ex.getMessage());
+    }
+    return "redirect:/entradas";
   }
 }

@@ -76,7 +76,7 @@ public class ProductoController {
       try {
         servicio.guardar(id, f);
         flash.addFlashAttribute("exito", "Producto guardado correctamente.");
-        return "redirect:/productos";
+        return id == null ? "redirect:/productos" : "redirect:/inventario";
       } catch (ReglaNegocioException ex) {
         errors.reject("negocio", ex.getMessage());
       } catch (org.springframework.dao.DataIntegrityViolationException ex) {
@@ -88,6 +88,6 @@ public class ProductoController {
   @PostMapping("/admin/productos/{id}/eliminar")
   public String eliminar(@PathVariable Long id, RedirectAttributes f) {
     f.addFlashAttribute("exito", servicio.eliminar(id));
-    return "redirect:/productos";
+    return "redirect:/inventario";
   }
 }

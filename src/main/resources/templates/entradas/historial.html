@@ -36,7 +36,9 @@
                 <th class="text-end">Cantidad</th>
                 <th>Proveedor</th>
                 <th>Responsable</th>
+                <th>Estado</th>
                 <th>Observación</th>
+                <th sec:authorize="hasRole('ADMIN')">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -53,15 +55,39 @@
                   ></strong>
                 </td>
                 <td class="text-end">
-                  <span class="quantity" th:text="'+' + ${e.cantidad}"></span>
+                  <span class="quantity" th:text="'-' + ${e.cantidad}"></span>
                 </td>
                 <td th:text="${e.proveedor.nombre}"></td>
                 <td th:text="${e.usuarioResponsable.username}"></td>
+                <td>
+                  <span
+                    class="badge"
+                    th:classappend="${e.estado.name() == 'APROBADO' ? 'badge-active' : (e.estado.name() == 'PENDIENTE' ? 'bg-warning text-dark' : 'badge-inactive')}"
+                    th:text="${e.estado}"
+                  ></span>
+                </td>
                 <td th:text="${e.observacion}"></td>
+                <td sec:authorize="hasRole('ADMIN')">
+                  <div class="d-flex flex-wrap gap-2" th:if="${e.estado.name() == 'PENDIENTE'}">
+                    <form th:action="@{/entradas/{id}/aprobar(id=${e.id})}" method="post">
+                      <button type="submit" class="btn btn-sm btn-success">
+                        Aprobar
+                      </button>
+                    </form>
+                    <form th:action="@{/entradas/{id}/rechazar(id=${e.id})}" method="post">
+                      <button type="submit" class="btn btn-sm btn-outline-danger">
+                        Rechazar
+                      </button>
+                    </form>
+                  </div>
+                  <span class="text-secondary small" th:unless="${e.estado.name() == 'PENDIENTE'}">
+                    Procesado
+                  </span>
+                </td>
               </tr>
               <tr th:if="${pagina.empty}">
-                <td colspan="6" class="empty-state">
-                  Todavía no se han registrado entradas de inventario.
+                <td colspan="8" class="empty-state">
+                  Todavía no se han registrado pedidos o movimientos de inventario.
                 </td>
               </tr>
             </tbody>

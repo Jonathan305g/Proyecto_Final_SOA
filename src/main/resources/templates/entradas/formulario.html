@@ -12,10 +12,10 @@
 
       <div class="page-heading">
         <div>
-          <p class="eyebrow">BODEGA / RECEPCIÓN</p>
-          <h1>Registrar entrada</h1>
+          <p class="eyebrow">BODEGA / REGISTRO</p>
+          <h1>Registrar pedido</h1>
           <p>
-            Registre los productos recibidos para actualizar sus existencias.
+            Registre la solicitud de pedido. El pedido se creará en estado PENDIENTE hasta ser confirmado por el Administrador para descontar el stock.
           </p>
         </div>
         <a class="btn btn-outline-secondary" th:href="@{/entradas}"
@@ -54,7 +54,7 @@
             </select>
           </div>
           <div class="col-md-4">
-            <label for="cantidad" class="form-label">Cantidad recibida *</label
+            <label for="cantidad" class="form-label">Cantidad a descontar *</label
             ><input
               id="cantidad"
               type="number"

@@ -29,7 +29,7 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers("/login", "/css/**", "/vendor/**", "/error")
                     .permitAll()
-                    .requestMatchers("/admin/**")
+                    .requestMatchers("/admin/**", "/entradas/*/aprobar", "/entradas/*/rechazar")
                     .hasRole("ADMIN")
                     .anyRequest()
                     .hasAnyRole("ADMIN", "BODEGUERO"))

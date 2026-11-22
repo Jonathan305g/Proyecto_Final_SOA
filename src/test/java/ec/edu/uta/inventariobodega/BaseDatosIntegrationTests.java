@@ -73,7 +73,8 @@ class BaseDatosIntegrationTests {
               producto.setCategoria(c);
               producto.setMarca(m);
               producto.setActivo(true);
-              producto.setStockMinimo(2);
+              producto.setStockMinimo(50);
+              producto.setStockActual(50);
               productoId = productos.save(producto).getId();
               admin = prefijo + "_admin";
               bodeguero = prefijo + "_bod";
@@ -130,6 +131,13 @@ class BaseDatosIntegrationTests {
         "SELECT COUNT(*) FROM entradas_inventario WHERE producto_id=?", Long.class, productoId);
   }
 
+  Long ultimaEntradaId() {
+    return jdbc.queryForObject(
+        "SELECT id FROM entradas_inventario WHERE producto_id=? ORDER BY id DESC LIMIT 1",
+        Long.class,
+        productoId);
+  }
+
   @Test
   void esquemaTieneSoloSeisTablasYRelacionesValidas() {
     assertThat(
@@ -159,9 +167,11 @@ class BaseDatosIntegrationTests {
 
   @Test
   void entradaActualizaStockYConservaHistorial() {
-    assertThat(stock()).isZero();
+    assertThat(stock()).isEqualTo(50);
     servicio.registrar(form(7), bodeguero);
-    assertThat(stock()).isEqualTo(7);
+    assertThat(stock()).isEqualTo(50);
+    servicio.aprobar(ultimaEntradaId());
+    assertThat(stock()).isEqualTo(43);
     assertThat(entradasPropias()).isEqualTo(1);
   }
 
@@ -169,7 +179,7 @@ class BaseDatosIntegrationTests {
   void ceroSeRechazaSinPersistir() {
     assertThatThrownBy(() -> servicio.registrar(form(0), admin))
         .isInstanceOf(ReglaNegocioException.class);
-    assertThat(stock()).isZero();
+    assertThat(stock()).isEqualTo(50);
     assertThat(entradasPropias()).isZero();
   }
 
@@ -177,7 +187,7 @@ class BaseDatosIntegrationTests {
   void negativoSeRechazaSinPersistir() {
     assertThatThrownBy(() -> servicio.registrar(form(-3), admin))
         .isInstanceOf(ReglaNegocioException.class);
-    assertThat(stock()).isZero();
+    assertThat(stock()).isEqualTo(50);
     assertThat(entradasPropias()).isZero();
   }
 
@@ -196,7 +206,7 @@ class BaseDatosIntegrationTests {
     f.setProveedorId(Long.MAX_VALUE);
     assertThatThrownBy(() -> servicio.registrar(f, admin))
         .isInstanceOf(ReglaNegocioException.class);
-    assertThat(stock()).isZero();
+    assertThat(stock()).isEqualTo(50);
     assertThat(entradasPropias()).isZero();
   }
 
@@ -208,11 +218,12 @@ class BaseDatosIntegrationTests {
                     .executeWithoutResult(
                         s -> {
                           servicio.registrar(form(9), admin);
-                          assertThat(stock()).isEqualTo(9);
+                          servicio.aprobar(ultimaEntradaId());
+                          assertThat(stock()).isEqualTo(41);
                           throw new IllegalStateException("Fallo después del flush");
                         }))
         .isInstanceOf(IllegalStateException.class);
-    assertThat(stock()).isZero();
+    assertThat(stock()).isEqualTo(50);
     assertThat(entradasPropias()).isZero();
   }
 
@@ -233,7 +244,7 @@ class BaseDatosIntegrationTests {
                               adminId);
                         }))
         .isInstanceOf(org.springframework.dao.DataAccessException.class);
-    assertThat(stock()).isZero();
+    assertThat(stock()).isEqualTo(50);
     assertThat(entradasPropias()).isZero();
   }
 
@@ -248,6 +259,7 @@ class BaseDatosIntegrationTests {
                 listos.countDown();
                 esperar(salida);
                 servicio.registrar(form(11), admin);
+                servicio.aprobar(ultimaEntradaId());
               });
       Future<?> b =
           pool.submit(
@@ -255,12 +267,13 @@ class BaseDatosIntegrationTests {
                 listos.countDown();
                 esperar(salida);
                 servicio.registrar(form(13), bodeguero);
+                servicio.aprobar(ultimaEntradaId());
               });
       assertThat(listos.await(10, TimeUnit.SECONDS)).isTrue();
       salida.countDown();
       a.get(20, TimeUnit.SECONDS);
       b.get(20, TimeUnit.SECONDS);
-      assertThat(stock()).isEqualTo(24);
+      assertThat(stock()).isEqualTo(26);
       assertThat(entradasPropias()).isEqualTo(2);
     } finally {
       salida.countDown();
@@ -442,8 +455,8 @@ class BaseDatosIntegrationTests {
                 .param("marcaId", marcaId.toString())
                 .param("activo", "true")
                 .param("stockActual", "999"))
-        .andExpect(redirectedUrl("/productos"));
-    assertThat(stock()).isZero();
+        .andExpect(redirectedUrl("/inventario"));
+    assertThat(stock()).isEqualTo(50);
   }
 
   @Test
@@ -468,7 +481,7 @@ class BaseDatosIntegrationTests {
         .andExpect(model().attributeHasFieldErrors("form", "cantidad"))
         .andExpect(
             content().string(org.hamcrest.Matchers.containsString("Ingrese un número entero")));
-    assertThat(stock()).isZero();
+    assertThat(stock()).isEqualTo(50);
     assertThat(entradasPropias()).isZero();
   }
 
@@ -518,7 +531,7 @@ class BaseDatosIntegrationTests {
                             "SELECT stock_actual FROM productos WHERE id=?",
                             Integer.class,
                             producto))
-                    .isZero();
+                    .isEqualTo(2);
                 mvc.perform(
                         post("/admin/usuarios")
                             .with(user(autenticado))
@@ -536,16 +549,24 @@ class BaseDatosIntegrationTests {
                             .with(csrf())
                             .param("productoId", producto.toString())
                             .param("proveedorId", pr.toString())
-                            .param("cantidad", "4")
+                            .param("cantidad", "1")
                             .param("usuarioResponsableId", bodegueroId.toString())
                             .param("fecha", "2000-01-01"))
+                    .andExpect(redirectedUrl("/entradas"));
+                Long entradaCreada =
+                    jdbc.queryForObject(
+                        "SELECT id FROM entradas_inventario WHERE producto_id=?", Long.class, producto);
+                mvc.perform(
+                        post("/entradas/" + entradaCreada + "/aprobar")
+                            .with(user(autenticado))
+                            .with(csrf()))
                     .andExpect(redirectedUrl("/entradas"));
                 assertThat(
                         jdbc.queryForObject(
                             "SELECT stock_actual FROM productos WHERE id=?",
                             Integer.class,
                             producto))
-                    .isEqualTo(4);
+                    .isEqualTo(1);
                 assertThat(
                         jdbc.queryForObject(
                             "SELECT usuario_responsable_id FROM entradas_inventario WHERE"
@@ -577,12 +598,13 @@ class BaseDatosIntegrationTests {
   @Test
   void entradasNoSePuedenEditarNiEliminar() throws Exception {
     servicio.registrar(form(5), admin);
+    servicio.aprobar(ultimaEntradaId());
     mvc.perform(
             post("/entradas/1/eliminar").with(user(details.loadUserByUsername(admin))).with(csrf()))
         .andExpect(status().isNotFound());
     mvc.perform(post("/entradas/1").with(user(details.loadUserByUsername(admin))).with(csrf()))
         .andExpect(status().isNotFound());
-    assertThat(stock()).isEqualTo(5);
+    assertThat(stock()).isEqualTo(45);
     assertThat(entradasPropias()).isEqualTo(1);
   }
 }

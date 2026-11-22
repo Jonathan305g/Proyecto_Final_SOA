@@ -32,6 +32,7 @@ class EntradaServiceTests {
 
   private Producto producto() {
     Producto p = new Producto();
+    p.setId(1L);
     p.setActivo(true);
     p.setStockActual(10);
     when(productos.bloquearPorId(1L)).thenReturn(Optional.of(p));
@@ -39,7 +40,7 @@ class EntradaServiceTests {
   }
 
   @Test
-  void entradaIncrementaStockYAsignaResponsableYFecha() {
+  void registroCreaPedidoEnEstadoPendienteSinDescontarStock() {
     Producto p = producto();
     Proveedor proveedor = new Proveedor();
     Usuario u = new Usuario();
@@ -47,12 +48,45 @@ class EntradaServiceTests {
     when(proveedores.findById(2L)).thenReturn(Optional.of(proveedor));
     when(usuarios.findByUsername("operador")).thenReturn(Optional.of(u));
     servicio.registrar(form, "operador");
-    assertThat(p.getStockActual()).isEqualTo(15);
+    assertThat(p.getStockActual()).isEqualTo(10);
     ArgumentCaptor<EntradaInventario> captor = ArgumentCaptor.forClass(EntradaInventario.class);
     verify(entradas).saveAndFlush(captor.capture());
     assertThat(captor.getValue().getUsuarioResponsable()).isSameAs(u);
     assertThat(captor.getValue().getFecha()).isNotNull();
     assertThat(captor.getValue().getProveedor()).isSameAs(proveedor);
+    assertThat(captor.getValue().getEstado()).isEqualTo(EstadoEntrada.PENDIENTE);
+  }
+
+  @Test
+  void aprobarDescuentaStockYCambiaEstado() {
+    Producto p = producto();
+    EntradaInventario e = new EntradaInventario();
+    e.setId(10L);
+    e.setCantidad(4);
+    e.setProducto(p);
+    e.setEstado(EstadoEntrada.PENDIENTE);
+    when(entradas.findById(10L)).thenReturn(Optional.of(e));
+    servicio.aprobar(10L);
+    assertThat(p.getStockActual()).isEqualTo(6);
+    assertThat(e.getEstado()).isEqualTo(EstadoEntrada.APROBADO);
+    verify(entradas).saveAndFlush(e);
+  }
+
+  @Test
+  void rechazarCambiaEstadoARechazadoSinModificarStock() {
+    Producto p = new Producto();
+    p.setStockActual(10);
+    EntradaInventario e = new EntradaInventario();
+    e.setId(10L);
+    e.setCantidad(4);
+    e.setProducto(p);
+    e.setEstado(EstadoEntrada.PENDIENTE);
+    when(entradas.findById(10L)).thenReturn(Optional.of(e));
+    servicio.rechazar(10L, "Motivo de prueba");
+    assertThat(p.getStockActual()).isEqualTo(10);
+    assertThat(e.getEstado()).isEqualTo(EstadoEntrada.RECHAZADO);
+    assertThat(e.getObservacion()).contains("Rechazado: Motivo de prueba");
+    verify(entradas).saveAndFlush(e);
   }
 
   @Test
@@ -101,16 +135,18 @@ class EntradaServiceTests {
   }
 
   @Test
-  void desbordamientoSeRechazaSinCambiarStock() {
+  void cantidadMayorAStockSeRechazaSinCambiarStock() {
     Producto p = producto();
-    p.setStockActual(Integer.MAX_VALUE);
+    p.setStockActual(4);
+    form.setCantidad(5);
     when(proveedores.findById(2L)).thenReturn(Optional.of(new Proveedor()));
     Usuario u = new Usuario();
     u.setEstado(true);
     when(usuarios.findByUsername("u")).thenReturn(Optional.of(u));
     assertThatThrownBy(() -> servicio.registrar(form, "u"))
-        .isInstanceOf(ReglaNegocioException.class);
-    assertThat(p.getStockActual()).isEqualTo(Integer.MAX_VALUE);
+        .isInstanceOf(ReglaNegocioException.class)
+        .hasMessageContaining("Stock insuficiente");
+    assertThat(p.getStockActual()).isEqualTo(4);
     verifyNoInteractions(entradas);
   }
 }

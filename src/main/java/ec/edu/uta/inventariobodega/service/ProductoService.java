@@ -39,6 +39,10 @@ public class ProductoService {
     p.setDescripcion(f.getDescripcion());
     p.setStockMinimo(f.getStockMinimo());
     p.setActivo(f.getActivo());
+    if (id == null) {
+      // El producto se crea con su stock mínimo como stock actual
+      p.setStockActual(f.getStockMinimo());
+    }
     p.setCategoria(
         categorias
             .findById(f.getCategoriaId())

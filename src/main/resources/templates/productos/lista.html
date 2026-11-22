@@ -22,6 +22,7 @@
         </div>
         <a
           sec:authorize="hasRole('ADMIN')"
+          th:if="${!esInventario}"
           class="btn btn-primary"
           th:href="@{/admin/productos/nuevo}"
           >+ Crear producto</a
@@ -76,7 +77,7 @@
                 <th class="text-end">Stock actual</th>
                 <th class="text-end">Stock mínimo</th>
                 <th>Estado</th>
-                <th sec:authorize="hasRole('ADMIN')">Acciones</th>
+                <th sec:authorize="hasRole('ADMIN')" th:if="${esInventario}">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -112,7 +113,7 @@
                     th:text="${p.activo ? 'Activo' : 'Inactivo'}"
                   ></span>
                 </td>
-                <td sec:authorize="hasRole('ADMIN')">
+                <td sec:authorize="hasRole('ADMIN')" th:if="${esInventario}">
                   <div class="d-flex flex-wrap gap-2">
                     <a
                       class="btn btn-sm btn-outline-primary"
@@ -134,7 +135,7 @@
                 </td>
               </tr>
               <tr th:if="${pagina.empty}">
-                <td colspan="6" class="empty-state">
+                <td th:colspan="${esInventario ? 6 : 5}" class="empty-state">
                   No hay productos que coincidan con la búsqueda.
                 </td>
               </tr>

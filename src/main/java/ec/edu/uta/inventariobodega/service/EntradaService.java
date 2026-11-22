@@ -48,11 +48,13 @@ public class EntradaService {
             .findByUsername(username)
             .filter(Usuario::getEstado)
             .orElseThrow(() -> new ReglaNegocioException("El usuario responsable no está activo."));
-    int nuevoStock;
-    try {
-      nuevoStock = Math.addExact(producto.getStockActual(), form.getCantidad());
-    } catch (ArithmeticException ex) {
-      throw new ReglaNegocioException("La cantidad supera la capacidad del inventario.");
+    if (form.getCantidad() > producto.getStockActual()) {
+      throw new ReglaNegocioException(
+          "Stock insuficiente ("
+              + producto.getStockActual()
+              + "). No se puede solicitar una cantidad mayor al stock actual ("
+              + form.getCantidad()
+              + ").");
     }
     EntradaInventario entrada = new EntradaInventario();
     entrada.setFecha(LocalDateTime.now(ZoneId.of("America/Guayaquil")));
@@ -61,7 +63,55 @@ public class EntradaService {
     entrada.setProducto(producto);
     entrada.setProveedor(proveedor);
     entrada.setUsuarioResponsable(usuario);
-    producto.setStockActual(nuevoStock);
+    entrada.setEstado(EstadoEntrada.PENDIENTE);
+    // El stock NO se descuenta aquí; permanece intacto hasta la confirmación del administrador.
+    entradas.saveAndFlush(entrada);
+  }
+
+  @Transactional
+  public void aprobar(Long entradaId) {
+    EntradaInventario entrada =
+        entradas
+            .findById(entradaId)
+            .orElseThrow(() -> new ReglaNegocioException("El pedido no existe."));
+    if (entrada.getEstado() != EstadoEntrada.PENDIENTE) {
+      throw new ReglaNegocioException("Solo se pueden confirmar pedidos en estado PENDIENTE.");
+    }
+    Producto producto =
+        productos
+            .bloquearPorId(entrada.getProducto().getId())
+            .orElseThrow(() -> new ReglaNegocioException("El producto no existe."));
+    if (!producto.getActivo()) {
+      throw new ReglaNegocioException("El producto está inactivo.");
+    }
+    if (entrada.getCantidad() > producto.getStockActual()) {
+      throw new ReglaNegocioException(
+          "Stock insuficiente ("
+              + producto.getStockActual()
+              + "). No se puede descontar la cantidad registrada ("
+              + entrada.getCantidad()
+              + ").");
+    }
+    producto.setStockActual(producto.getStockActual() - entrada.getCantidad());
+    entrada.setEstado(EstadoEntrada.APROBADO);
+    entradas.saveAndFlush(entrada);
+  }
+
+  @Transactional
+  public void rechazar(Long entradaId, String motivo) {
+    EntradaInventario entrada =
+        entradas
+            .findById(entradaId)
+            .orElseThrow(() -> new ReglaNegocioException("El pedido no existe."));
+    if (entrada.getEstado() != EstadoEntrada.PENDIENTE) {
+      throw new ReglaNegocioException("Solo se pueden rechazar pedidos en estado PENDIENTE.");
+    }
+    entrada.setEstado(EstadoEntrada.RECHAZADO);
+    if (motivo != null && !motivo.isBlank()) {
+      String obs = entrada.getObservacion();
+      entrada.setObservacion(
+          (obs == null || obs.isBlank() ? "" : obs + " | ") + "Rechazado: " + motivo.trim());
+    }
     entradas.saveAndFlush(entrada);
   }
 }

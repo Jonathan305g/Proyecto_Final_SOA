@@ -30,6 +30,10 @@ public class EntradaInventario {
   @JoinColumn(name = "usuario_responsable_id", nullable = false)
   private Usuario usuarioResponsable;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private EstadoEntrada estado = EstadoEntrada.PENDIENTE;
+
   public Long getId() {
     return id;
   }
@@ -84,5 +88,13 @@ public class EntradaInventario {
 
   public void setUsuarioResponsable(Usuario usuarioResponsable) {
     this.usuarioResponsable = usuarioResponsable;
+  }
+
+  public EstadoEntrada getEstado() {
+    return estado;
+  }
+
+  public void setEstado(EstadoEntrada estado) {
+    this.estado = estado;
   }
 }

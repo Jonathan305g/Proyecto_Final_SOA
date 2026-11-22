@@ -18,8 +18,11 @@
           ></h1>
           <p>Defina los datos del producto y su nivel mínimo de existencias.</p>
         </div>
-        <a class="btn btn-outline-secondary" th:href="@{/productos}"
-          >Volver a productos</a
+        <a
+          class="btn btn-outline-secondary"
+          th:href="${id == null ? '/productos' : '/inventario'}"
+          th:text="${id == null ? 'Volver a productos' : 'Volver a inventario'}"
+          >Volver</a
         >
       </div>
       <form
@@ -116,12 +119,13 @@
           </div>
         </div>
         <p class="form-note mt-4">
-          El stock inicial es cero. Las existencias se actualizan únicamente al
-          registrar entradas.
+          Al crear un producto, su stock se inicia con el stock mínimo indicado. Las existencias se irán descontando según los registros realizados en bodega.
         </p>
         <div class="form-actions">
           <button class="btn btn-primary" type="submit">Guardar producto</button
-          ><a class="btn btn-outline-secondary" th:href="@{/productos}"
+          ><a
+            class="btn btn-outline-secondary"
+            th:href="${id == null ? '/productos' : '/inventario'}"
             >Cancelar</a
           >
         </div>

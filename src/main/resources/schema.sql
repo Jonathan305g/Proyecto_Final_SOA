@@ -38,10 +38,13 @@ CREATE TABLE IF NOT EXISTS entradas_inventario (
  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, fecha DATETIME(6) NOT NULL,
  cantidad INT NOT NULL, observacion VARCHAR(500), producto_id BIGINT NOT NULL,
  proveedor_id BIGINT NOT NULL, usuario_responsable_id BIGINT NOT NULL,
+ estado VARCHAR(20) NOT NULL DEFAULT 'APROBADO',
  CONSTRAINT fk_entrada_producto FOREIGN KEY (producto_id) REFERENCES productos(id),
  CONSTRAINT fk_entrada_proveedor FOREIGN KEY (proveedor_id) REFERENCES proveedores(id),
  CONSTRAINT fk_entrada_usuario FOREIGN KEY (usuario_responsable_id) REFERENCES usuarios(id),
- CONSTRAINT ck_entrada_cantidad CHECK (cantidad > 0), INDEX idx_entrada_fecha (fecha,id)
+ CONSTRAINT ck_entrada_cantidad CHECK (cantidad > 0),
+ CONSTRAINT ck_entrada_estado CHECK (estado IN ('PENDIENTE','APROBADO','RECHAZADO')),
+ INDEX idx_entrada_fecha (fecha,id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- DATOS INICIALES DE EJEMPLO, exclusivamente para practicar con el sistema.
